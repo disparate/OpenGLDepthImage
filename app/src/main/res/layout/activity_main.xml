@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+
+              android:gravity="center">
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:textSize="28sp"
+              android:text="Select item:"/>
+
+
+    <Button
+            android:id="@+id/buttonFirst"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Air"/>
+
+
+    <Button
+            android:id="@+id/buttonSecond"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Basket"/>
+
+
+    <Button
+            android:id="@+id/buttonThird"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Trees"/>
+
+
+
+    <Button
+            android:id="@+id/buttonFourth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lady"/>
+</LinearLayout>
