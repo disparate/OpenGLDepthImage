@@ -19,6 +19,20 @@
 
         <activity android:name=".OpenGlActivity">
         </activity>
+
+        <service
+                android:name=".wallpaper.DepthWallpaper"
+                android:enabled="true"
+                android:label="depth wallpaper"
+                android:permission="android.permission.BIND_WALLPAPER">
+            <intent-filter android:priority="1" >
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+            <meta-data
+                    android:name="android.service.wallpaper"
+                    android:resource="@xml/wallpaper"
+            />
+        </service>
     </application>
 
 </manifest>

@@ -2,6 +2,8 @@ package com.kazarovets.opengldepthmap
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.app.WallpaperManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -9,6 +11,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.kazarovets.opengldepthmap.wallpaper.DepthWallpaper
 import kotlinx.android.synthetic.main.activity_depth.*
 
 class OpenGlActivity : AppCompatActivity() {
@@ -26,20 +29,7 @@ class OpenGlActivity : AppCompatActivity() {
 
         val id = intent.getIntExtra("id", 0)
 
-        val originalImage = when (id) {
-            0 -> R.drawable.small_pic
-            1 -> R.drawable.ball
-            2 -> R.drawable.small_pic_2
-            else -> R.drawable.lady
-        }
-
-        val mapImage = when (id) {
-            0 -> R.drawable.small_map
-            1 -> R.drawable.ball_map
-            2 -> R.drawable.small_map_2
-            else -> R.drawable.lady_map
-
-        }
+        val (originalImage, mapImage) = ResourcesRepository.getOriginalAndDepth(id)
 
         glSurfaceView.setEGLContextClientVersion(2)
         val renderer = DepthMapRenderer(this, originalImage, mapImage)
@@ -55,6 +45,15 @@ class OpenGlActivity : AppCompatActivity() {
             }
 
         })
+
+        setButton.setOnClickListener {
+            val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+            intent.putExtra(
+                WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                ComponentName(this, DepthWallpaper::class.java)
+            )
+            startActivity(intent)
+        }
     }
 
     override fun onPause() {

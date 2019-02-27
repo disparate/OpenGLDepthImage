@@ -28,7 +28,6 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
     private var thresholdLocation: Int = 0
     private var mouseLocation: Int = 0
     private var resolutionLocation: Int = 0
-    private var pixelRatioLocation: Int = 0
 
     private var programId: Int = 0
 
@@ -36,7 +35,7 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
     private var width: Float = 0f
     private var height: Float = 0f
 
-    private val horizontalThreshold = 15
+    private val horizontalThreshold = 20
     private val verticalThreshold = 25
 
     var mouseX: Float = 0f
@@ -100,7 +99,6 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
 
         resolutionLocation = glGetUniformLocation(programId, "resolution")
         mouseLocation = glGetUniformLocation(programId, "mouse")
-        pixelRatioLocation = glGetUniformLocation(programId, "pixelRatio")
         thresholdLocation = glGetUniformLocation(programId, "threshold")
         depthImageLocation = glGetUniformLocation(programId, "depthImage")
         originalImageLocation = glGetUniformLocation(programId, "originalImage")
@@ -138,8 +136,6 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
             val heightMult = Math.min(1f, imageAspectRatio / aspectRatio)
             val newHeight = bitmap.height * heightMult
 
-
-            Log.d("!", "$oldWidth, $newWidth     $oldHeight, $newHeight")
             val cropped = Bitmap.createBitmap(
                 bitmap,
                 (oldWidth - newWidth.roundToInt()) / 2,
@@ -180,6 +176,8 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
         val halfX = width / 2
         val halfY = height / 2
 
+        if(halfX < 1f || halfY < 1f) return
+
         mouseTargetX = (halfX - x) / halfX
         mouseTargetY = (halfY - y) / halfY
     }
@@ -187,14 +185,11 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
     override fun onDrawFrame(arg0: GL10) {
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
+        this.mouseX += (this.mouseTargetX - this.mouseX) * 0.05f
+        this.mouseY += (this.mouseTargetY - this.mouseY) * 0.05f
 
-
-        this.mouseX += (this.mouseTargetX - this.mouseX) * 0.05f;
-        this.mouseY += (this.mouseTargetY - this.mouseY) * 0.05f;
         glUniform2f(mouseLocation, mouseX, mouseY)
 
-
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
-
     }
 }
