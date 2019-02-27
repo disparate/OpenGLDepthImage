@@ -32,7 +32,8 @@ class OpenGlActivity : AppCompatActivity() {
         val (originalImage, mapImage) = ResourcesRepository.getOriginalAndDepth(id)
 
         glSurfaceView.setEGLContextClientVersion(2)
-        val renderer = DepthMapRenderer(this, originalImage, mapImage)
+        val renderer = DepthMapRenderer(this)
+        renderer.updateImages(originalImage, mapImage)
         glSurfaceView.setRenderer(renderer)
 
         glSurfaceView.setOnTouchListener(object : View.OnTouchListener {
@@ -47,12 +48,13 @@ class OpenGlActivity : AppCompatActivity() {
         })
 
         setButton.setOnClickListener {
-            val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+                        val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
             intent.putExtra(
                 WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
                 ComponentName(this, DepthWallpaper::class.java)
             )
             startActivity(intent)
+
         }
     }
 

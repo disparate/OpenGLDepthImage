@@ -28,9 +28,11 @@ class DepthWallpaper : GLWallpaperService() {
 
             setEGLContextClientVersion(2)
             val (originalImage, mapImage) = ResourcesRepository.getOriginalAndDepth(3)
-            renderer = DepthMapRenderer(this@DepthWallpaper, originalImage, mapImage)
+            renderer = DepthMapRenderer(this@DepthWallpaper).apply {
+                updateImages(originalImage, mapImage)
+            }
             setRenderer(renderer)
-            renderMode = RENDERMODE_CONTINUOUSLY
+            renderMode = RENDERMODE_WHEN_DIRTY
         }
 
         override fun onSurfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
@@ -60,11 +62,7 @@ class DepthWallpaper : GLWallpaperService() {
         ) {
             super.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep, xPixelOffset, yPixelOffset)
             renderer?.handleMove(xOffset * width, yOffset * height)
+            requestRender()
         }
-
-        override fun onTouchEvent(event: MotionEvent) {
-            super.onTouchEvent(event)
-        }
-
     }
 }

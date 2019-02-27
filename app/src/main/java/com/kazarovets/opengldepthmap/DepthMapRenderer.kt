@@ -8,7 +8,6 @@ import android.opengl.GLES20
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView.Renderer
 import android.opengl.GLUtils
-import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -17,7 +16,7 @@ import javax.microedition.khronos.opengles.GL10
 import kotlin.math.roundToInt
 
 
-class DepthMapRenderer(private val context: Context, val original: Int, val depth: Int) : Renderer {
+class DepthMapRenderer(private val context: Context) : Renderer {
 
     private var vertexData: FloatBuffer? = null
 
@@ -35,6 +34,9 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
     private var width: Float = 0f
     private var height: Float = 0f
 
+    var original: Int = 0
+    var depth: Int = 0
+
     private val horizontalThreshold = 20
     private val verticalThreshold = 25
 
@@ -43,6 +45,7 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
 
     var mouseTargetX = 0f
     var mouseTargetY = 0f
+
 
     private val textureIds = IntArray(2)
 
@@ -53,7 +56,7 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
         createAndUseProgram()
         getLocations()
         prepareData()
-        bindTextures(original, depth)
+        createTextures(original, depth)
         bindData()
     }
 
@@ -68,6 +71,7 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
         glUniform2f(resolutionLocation, width.toFloat(), height.toFloat())
         glUniform2f(thresholdLocation, horizontalThreshold.toFloat(), verticalThreshold.toFloat())
         glViewport(0, 0, (width), (height))
+        updateImages(original, depth)
     }
 
     private fun prepareData() {
@@ -82,7 +86,6 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
             .allocateDirect(vertices.size * 4)
             .order(ByteOrder.nativeOrder())
             .asFloatBuffer()
-
 
         vertexData!!.put(vertices)
     }
@@ -110,39 +113,52 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
         glEnableVertexAttribArray(aPositionLocation)
     }
 
-    fun bindTextures(original: Int, depth: Int) {
-        val images = listOf<Int>(original, depth)
+    private fun getBitmap(res: Int): Bitmap {
 
         // получение Bitmap
         val options = BitmapFactory.Options()
         options.inScaled = false
 
+        val bitmap = BitmapFactory.decodeResource(
+            context.resources, res, options
+        )
+
+        val aspectRatio = if (height > 0.0001f) {
+            width / height
+        } else {
+            val metrics = context.resources.displayMetrics
+            metrics.widthPixels.toFloat() / metrics.heightPixels
+        }
+        val imageAspectRatio = bitmap.width.toFloat() / bitmap.height
+
+        val oldWidth = bitmap.width
+        val widthMult = Math.min(1f, aspectRatio / imageAspectRatio)
+        val newWidth = bitmap.width * widthMult
+
+        val oldHeight = bitmap.height
+        val heightMult = Math.min(1f, imageAspectRatio / aspectRatio)
+        val newHeight = bitmap.height * heightMult
+
+        val cropped = Bitmap.createBitmap(
+            bitmap,
+            (oldWidth - newWidth.roundToInt()) / 2,
+            (oldHeight - newHeight.roundToInt()) / 2,
+            newWidth.roundToInt(),
+            newHeight.roundToInt()
+        )
+        bitmap.recycle()
+
+        return cropped
+    }
+
+    fun createTextures(original: Int, depth: Int) {
+        val images = listOf(original, depth)
+
         glGenTextures(1, textureIds, 0)
         for (i in 0 until images.size) {
-
-            val bitmap = BitmapFactory.decodeResource(
-                context.resources, images[i], options
-            )
-
-            val metrics = context.resources.displayMetrics
-            val aspectRatio = metrics.widthPixels.toFloat() / metrics.heightPixels
-            val imageAspectRatio = bitmap.width.toFloat() / bitmap.height
-
-            val oldWidth = bitmap.width
-            val widthMult = Math.min(1f, aspectRatio / imageAspectRatio)
-            val newWidth = bitmap.width * widthMult
-
-            val oldHeight = bitmap.height
-            val heightMult = Math.min(1f, imageAspectRatio / aspectRatio)
-            val newHeight = bitmap.height * heightMult
-
-            val cropped = Bitmap.createBitmap(
-                bitmap,
-                (oldWidth - newWidth.roundToInt()) / 2,
-                (oldHeight - newHeight.roundToInt()) / 2,
-                newWidth.roundToInt(),
-                newHeight.roundToInt()
-            )
+            val cropped = if(images[i] != 0) {
+                getBitmap(images[i])
+            } else null
 
             glBindTexture(GL_TEXTURE_2D, textureIds[i])
 
@@ -156,9 +172,7 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
             // Upload the image into the texture.
             glFlush()
 
-            bitmap?.recycle()
             cropped?.recycle()
-
         }
 
         // set which texture units to render with.
@@ -172,11 +186,27 @@ class DepthMapRenderer(private val context: Context, val original: Int, val dept
 
     }
 
+    fun updateImages(original: Int, depth: Int) {
+        this.original = original
+        this.depth = depth
+        val images = listOf(original, depth)
+
+        for (i in 0 until images.size) {
+            val cropped = getBitmap(images[i])
+
+            glBindTexture(GL_TEXTURE_2D, textureIds[i])
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, cropped, 0)
+
+            glFlush()
+            cropped.recycle()
+        }
+    }
+
     fun handleMove(x: Float, y: Float) {
         val halfX = width / 2
         val halfY = height / 2
 
-        if(halfX < 1f || halfY < 1f) return
+        if (halfX < 1f || halfY < 1f) return
 
         mouseTargetX = (halfX - x) / halfX
         mouseTargetY = (halfY - y) / halfY
